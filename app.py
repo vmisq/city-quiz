@@ -199,6 +199,10 @@ def build_game_page(N, uf, r):
 app = dash.Dash(
     external_stylesheets=[dbc.themes.SKETCHY]
 )
+app.config.suppress_callback_exceptions=True
+app.title = 'City-Quiz!'
+
+server = app.server
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=True),
