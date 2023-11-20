@@ -111,6 +111,7 @@ def build_page(table, data, instructions, r):
                     dbc.Button("", id=f'giveup-button{"-r" if r else ""}', n_clicks=0, style={'display': 'none'})
                 ], width={'size': 4, 'offset': 4}),
             ], id=f'after-validate{"-r" if r else ""}'),
+            html.Br(),
         ])
 
 def build_game_page(N, uf, r):
