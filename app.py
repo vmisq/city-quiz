@@ -206,6 +206,7 @@ app.title = 'City-Quiz!'
 server = app.server
 
 app.layout = html.Div([
+    html.Script(f'document.documentElement.lang = "pt-BR";'),
     dcc.Location(id='url', refresh=True),
     dcc.Location(id='url-search', refresh=True),
     dbc.Spinner(
