@@ -121,8 +121,8 @@ def build_game_page(N, uf, r):
         html.Th("#"),
         html.Th("Município"),
         html.Th("Gentílico"),
+        html.Th("Mesoregião"),
         html.Th("População estimada"),
-        html.Th("Área km²"),
         html.Th("Bioma"),
         html.Th("Prefeito"),
         html.Th("IDH"),
@@ -131,8 +131,8 @@ def build_game_page(N, uf, r):
     values = {
         'municipio': sorted([val for key, val in data['municipio'].items()]),
         'Gentílico': sorted([val for key, val in data['Gentílico'].items()]),
+        'mesoregiao': sorted([val for key, val in data['mesoregiao'].items()]),
         'População estimada': sorted([float(val) for key, val in data['População estimada'].items()]),
-        'Área da unidade territorial': sorted([float(val) for key, val in data['Área da unidade territorial'].items()]),
         'Bioma': sorted([val for key, val in data['Bioma'].items()]),
         'Prefeito': sorted([val for key, val in data['Prefeito'].items()]),
         'IDH': sorted([float(val) for key, val in data['IDH'].items()])
@@ -153,8 +153,8 @@ def build_game_page(N, uf, r):
                     options=[{"label": opt_j, "value": opt_j} for opt_j in values['Gentílico']],
                     id={"type": "select_gentilico", "index": i}
                 )),
+                html.Th(data['mesoregiao'][i]),
                 html.Th(data['População estimada'][i]),
-                html.Th(data['Área da unidade territorial'][i]),
                 html.Th(data['Bioma'][i]),
                 html.Th(data['Prefeito'][i]),
                 html.Th(data['IDH'][i]),
@@ -169,12 +169,12 @@ def build_game_page(N, uf, r):
                 html.Th(municipio),
                 html.Th(dbc.Input(id={"type": "input_gentilico", "index": i})),
                 html.Th(dbc.Select(
-                    options=[{"label": f'{opt_j:,.0f}'.replace(',', '.'), "value": opt_j} for opt_j in values['População estimada']],
-                    id={"type": "select_pop", "index": i}
+                    options=[{"label": opt_j, "value": opt_j} for opt_j in values['mesoregiao']],
+                    id={"type": "select_meso", "index": i}
                 )),
                 html.Th(dbc.Select(
-                    options=[{"label": f'{opt_j:,.3f}'.replace('.', '_').replace(',', '.').replace('_', ','), "value": opt_j} for opt_j in values['Área da unidade territorial']],
-                    id={"type": "select_area", "index": i}
+                    options=[{"label": f'{opt_j:,.0f}'.replace(',', '.'), "value": opt_j} for opt_j in values['População estimada']],
+                    id={"type": "select_pop", "index": i}
                 )),
                 html.Th(dbc.Select(
                     options=[{"label": opt_j, "value": opt_j} for opt_j in values['Bioma']],
@@ -257,14 +257,14 @@ def update_location(n1, N_value, UF_value, REVERSED_value):
 @app.callback(
     Output('after-validate', 'children'),
     Output({"type": "input_gentilico", "index": ALL}, "valid"),
+    Output({"type": "select_meso", "index": ALL}, "valid"),
     Output({"type": "select_pop", "index": ALL}, "valid"),
-    Output({"type": "select_area", "index": ALL}, "valid"),
     Output({"type": "select_bio", "index": ALL}, "valid"),
     Output({"type": "select_pref", "index": ALL}, "valid"),
     Output({"type": "select_idh", "index": ALL}, "valid"),
     Output({"type": "input_gentilico", "index": ALL}, "invalid"),
+    Output({"type": "select_meso", "index": ALL}, "invalid"),
     Output({"type": "select_pop", "index": ALL}, "invalid"),
-    Output({"type": "select_area", "index": ALL}, "invalid"),
     Output({"type": "select_bio", "index": ALL}, "invalid"),
     Output({"type": "select_pref", "index": ALL}, "invalid"),
     Output({"type": "select_idh", "index": ALL}, "invalid"),
@@ -272,8 +272,8 @@ def update_location(n1, N_value, UF_value, REVERSED_value):
     Input('send-button', 'n_clicks'),
     State('answers', 'data'),
     State({"type": "input_gentilico", "index": ALL}, "value"),
+    State({"type": "select_meso", "index": ALL}, "value"),
     State({"type": "select_pop", "index": ALL}, "value"),
-    State({"type": "select_area", "index": ALL}, "value"),
     State({"type": "select_bio", "index": ALL}, "value"),
     State({"type": "select_pref", "index": ALL}, "value"),
     State({"type": "select_idh", "index": ALL}, "value"),
@@ -284,8 +284,8 @@ def validate_answers(n_clicks, data, input_gentilico, select_pop, select_area, s
     if n_clicks<=0:
         raise PreventUpdate
     results_gentilico = [(i or '').lower().strip().replace(' ', '-') in [w.lower().strip().replace(' ', '-') for w in j.split(' ou ')] for i,j in zip(input_gentilico, [k for _, k in data['Gentílico'].items()])]
+    results_meso = [i==j for i,j in zip(select_area, [k for _, k in data['mesoregiao'].items()])]
     results_pop = [i==j for i,j in zip(select_pop, [k for _, k in data['População estimada'].items()])]
-    results_area = [i==j for i,j in zip(select_area, [k for _, k in data['Área da unidade territorial'].items()])]
     results_bio = [i==j for i,j in zip(select_bio, [k for _, k in data['Bioma'].items()])]
     results_pref = [i==j for i,j in zip(select_pref, [k for _, k in data['Prefeito'].items()])]
     results_idh = [i==j for i,j in zip(select_idh, [k for _, k in data['IDH'].items()])]
@@ -338,7 +338,7 @@ def validate_answers(n_clicks, data, input_gentilico, select_pop, select_area, s
         style={'width': '100%', 'font-size': 18}
     ), href='/')
 
-    results = [*results_gentilico, *results_pop, *results_area, *results_bio, *results_pref, *results_idh]
+    results = [*results_gentilico, *results_meso, *results_pop, *results_bio, *results_pref, *results_idh]
     text_summary = f"{sum(results)} de {len(results)} ({sum(results)/len(results):.0%})"
 
     if gave_up>0:
@@ -360,14 +360,14 @@ def validate_answers(n_clicks, data, input_gentilico, select_pop, select_area, s
     return (
         after_buttons,
         results_gentilico,
+        results_meso,
         results_pop,
-        results_area,
         results_bio,
         results_pref,
         results_idh,
         [not i for i in results_gentilico],
+        [not i for i in results_meso],
         [not i for i in results_pop],
-        [not i for i in results_area],
         [not i for i in results_bio],
         [not i for i in results_pref],
         [not i for i in results_idh],
@@ -485,8 +485,8 @@ def refresh_game(n1, search):
 @app.callback(
     Output('send-button', 'n_clicks'),
     Output({"type": "input_gentilico", "index": ALL}, "value"),
+    Output({"type": "select_meso", "index": ALL}, "value"),
     Output({"type": "select_pop", "index": ALL}, "value"),
-    Output({"type": "select_area", "index": ALL}, "value"),
     Output({"type": "select_bio", "index": ALL}, "value"),
     Output({"type": "select_pref", "index": ALL}, "value"),
     Output({"type": "select_idh", "index": ALL}, "value"),
@@ -501,8 +501,8 @@ def give_up(n1, n2, data):
     return (
         n2+1,
         [k for _, k in data['Gentílico'].items()],
+        [k for _, k in data['mesoregiao'].items()],
         [k for _, k in data['População estimada'].items()],
-        [k for _, k in data['Área da unidade territorial'].items()],
         [k for _, k in data['Bioma'].items()],
         [k for _, k in data['Prefeito'].items()],
         [k for _, k in data['IDH'].items()],
