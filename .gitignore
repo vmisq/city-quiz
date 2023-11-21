@@ -1,5 +1,5 @@
 *.ipynb
-data/*.json
+data/indicadores*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
