@@ -280,11 +280,11 @@ def update_location(n1, N_value, UF_value, REVERSED_value):
     State('giveup-button', 'n_clicks'),
     prevent_initial_call=True
 )
-def validate_answers(n_clicks, data, input_gentilico, select_pop, select_area, select_bio, select_pref, select_idh, gave_up):
+def validate_answers(n_clicks, data, input_gentilico, select_meso, select_pop, select_bio, select_pref, select_idh, gave_up):
     if n_clicks<=0:
         raise PreventUpdate
     results_gentilico = [(i or '').lower().strip().replace(' ', '-') in [w.lower().strip().replace(' ', '-') for w in j.split(' ou ')] for i,j in zip(input_gentilico, [k for _, k in data['Gentílico'].items()])]
-    results_meso = [i==j for i,j in zip(select_area, [k for _, k in data['mesoregiao'].items()])]
+    results_meso = [i==j for i,j in zip(select_meso, [k for _, k in data['mesoregiao'].items()])]
     results_pop = [i==j for i,j in zip(select_pop, [k for _, k in data['População estimada'].items()])]
     results_bio = [i==j for i,j in zip(select_bio, [k for _, k in data['Bioma'].items()])]
     results_pref = [i==j for i,j in zip(select_pref, [k for _, k in data['Prefeito'].items()])]
@@ -527,4 +527,4 @@ def give_up_reversed(n1, n2, data):
     )
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(debug=True)
