@@ -138,7 +138,7 @@ def build_game_page(N, uf, r):
         'População estimada': sorted([float(val) for key, val in data['População estimada'].items()]),
         'Bioma': sorted([val for key, val in data['Bioma'].items()]),
         'Prefeito': sorted([val for key, val in data['Prefeito'].items()]),
-        'IDH': sorted([float(val) for key, val in data['IDH'].items()])
+        'IDH': sorted([val for key, val in data['IDH'].items()])
     }
 
     rows = []
@@ -188,7 +188,7 @@ def build_game_page(N, uf, r):
                     id={"type": "select_pref", "index": i}
                 )),
                 html.Th(dbc.Select(
-                    options=[{"label": f'{opt_j:,.3f}'.replace('.', ','), "value": opt_j} for opt_j in values['IDH']],
+                    options=[{"label": f'{float(opt_j):,.3f}'.replace('.', ','), "value": opt_j} for opt_j in values['IDH']],
                     id={"type": "select_idh", "index": i}
                 ))
             ]))
@@ -286,7 +286,13 @@ def update_location(n1, N_value, UF_value, REVERSED_value):
 def validate_answers(n_clicks, data, input_gentilico, select_meso, select_pop, select_bio, select_pref, select_idh, gave_up):
     if n_clicks<=0:
         raise PreventUpdate
-    results_gentilico = [(i or '').lower().strip().replace(' ', '-') in [w.lower().strip().replace(' ', '-') for w in j.split(' ou ')] for i,j in zip(input_gentilico, [k for _, k in data['Gentílico'].items()])]
+    results_gentilico = [
+        all([
+            k.lower().strip().replace(' ', '-') in [w.lower().strip().replace(' ', '-') for w in j.split(' ou ')]
+            for k in (i or '').split(' ou ')
+        ])
+        for i,j in zip(input_gentilico, [k for _, k in data['Gentílico'].items()])
+    ]
     results_meso = [i==j for i,j in zip(select_meso, [k for _, k in data['mesoregiao'].items()])]
     results_pop = [i==j for i,j in zip(select_pop, [k for _, k in data['População estimada'].items()])]
     results_bio = [i==j for i,j in zip(select_bio, [k for _, k in data['Bioma'].items()])]
