@@ -117,6 +117,9 @@ def build_page(table, data, instructions, r):
 def build_game_page(N, uf, r):
     data = get_quiz_data(int(N), uf)
 
+    if r:
+        data['municipio'] = {municipio_key: municipio_item.split(' - ')[0] for municipio_key, municipio_item in data['municipio'].items()} 
+
     table_header = [html.Thead(html.Tr([
         html.Th("#"),
         html.Th("Município"),
