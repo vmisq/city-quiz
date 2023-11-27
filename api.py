@@ -4,6 +4,7 @@ import json
 import os
 import datetime
 import inspect
+import asyncio
 
 DAYS_TO_REFRESH = 180
 PREFERED_FILTER = json.loads(os.environ.get('PREFERED_FILTER', '{}'))
@@ -12,8 +13,7 @@ MIN_POP_BALANCE = int(os.environ.get('MIN_POP_BALANCE', '0'))
 def check_if_exists(func):
     def wrapper(*args, **kwargs):
         file_path = kwargs.get('file_path') or inspect.signature(func).parameters['file_path'].default
-        if len(args):
-            file_path = file_path.replace('__id__', str(args[0]))
+        file_path = file_path.replace('__id__', str(kwargs.get('id')))
         if os.path.exists(file_path):
             last_modified_date = os.path.getmtime(file_path)
             last_modified_date = datetime.datetime.fromtimestamp(last_modified_date)
@@ -110,17 +110,20 @@ indicadores = [
     {'id': 47000, 'indicador': 'PIB per capita'}
 ]
 
-def get_quiz_data(N=5, uf='ALL'):
+async def get_quiz_data_async(N=5, uf='ALL'):
     df_municipios = get_municipios()
     df_populacao = get_populacao_municipios()
     N_municipios = fetch_random_cities(df_municipios.merge(df_populacao[['id', 'populacao']], on='id'), N=N, uf=uf)
     
-    buffer = []
-    for municipio in N_municipios:
-        df_buffer = get_indicadores(municipio['id'], indicadores)
+    def make_buffer(municipio, indicadores):
+        df_buffer = get_indicadores(id=municipio['id'], indicadores=indicadores)
         df_buffer['municipio'] = municipio['nome'] + ' - ' + municipio['uf_sigla']
         df_buffer['mesoregiao'] = municipio['nome_mesoregiao']
-        buffer.append(df_buffer)
+        return df_buffer
+
+    buffer = await asyncio.gather(*[
+        asyncio.to_thread(make_buffer, municipio=municipio, indicadores=indicadores) for municipio in N_municipios
+    ])
 
     df = pd.concat(buffer) \
         .merge(pd.DataFrame(indicadores), left_on='id', right_on='id') \
@@ -131,29 +134,5 @@ def get_quiz_data(N=5, uf='ALL'):
 
     return json.loads(df)
 
-
-
-
-
-
-
-
-
-### OLD
-# @check_if_exists
-# def get_indicadores_panorama(file_path='data/indicadores-panorama.json'):
-#     def parse_levels(x):
-#         for i in x:
-#             yield {
-#                 'id': i['id'],
-#                 'indicador': i['indicador'],
-#                 'posicao': i['posicao']
-#             }
-#             child = i.get('children')
-#             if child:
-#                 for j in parse_levels(child):
-#                     yield j
-# 
-#     url = 'https://servicodados.ibge.gov.br/api/v1/pesquisas/10058/indicadores'
-#     response = requests.get(url)
-#     return [i for i in parse_levels(response.json())]
+def get_quiz_data(*args, **kwargs):
+    return asyncio.run(get_quiz_data_async(*args, **kwargs))
