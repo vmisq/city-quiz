@@ -6,7 +6,7 @@ import datetime
 import inspect
 import asyncio
 
-DAYS_TO_REFRESH = 180
+DAYS_TO_REFRESH = 180000
 PREFERED_FILTER = json.loads(os.environ.get('PREFERED_FILTER', '{}'))
 MIN_POP_BALANCE = int(os.environ.get('MIN_POP_BALANCE', '0'))
 
@@ -20,6 +20,10 @@ def check_if_exists(func):
             now = datetime.datetime.now()
             if (now - last_modified_date).days<=DAYS_TO_REFRESH:
                 return pd.read_json(file_path)
+        else:
+            folder_name = '/'.join(file_path.split('/')[:-1])
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
         json_res = func(*args, **kwargs)
         with open(file_path, 'w') as f:
             json.dump(json_res, f)
@@ -62,7 +66,7 @@ def get_populacao_municipios(file_path='data/populacao-municipios.json'):
     } for i in response.json()[0]['resultados'][0]['series']]
 
 @check_if_exists
-def get_indicadores(id, indicadores, file_path='data/indicadores-__id__.json'):
+def get_indicadores(id, indicadores, file_path='data/indicadores/__id__.json'):
     url = f"https://servicodados.ibge.gov.br/api/v1/pesquisas/-/indicadores/{'|'.join([str(i['id']) for i in indicadores])}/resultados/{id}"
     response = requests.get(url)
     return [{'id': i['id'], 'value': parse_latest_value(i['res'][0]['res'])} for i in response.json()]
