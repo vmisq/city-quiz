@@ -1,5 +1,6 @@
 *.ipynb
 data/indicadores*.json
+cq
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

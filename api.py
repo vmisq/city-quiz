@@ -6,7 +6,7 @@ import datetime
 import inspect
 import asyncio
 
-DAYS_TO_REFRESH = 180000
+DAYS_TO_REFRESH = 365 #180000
 PREFERED_FILTER = json.loads(os.environ.get('PREFERED_FILTER', '{}'))
 MIN_POP_BALANCE = int(os.environ.get('MIN_POP_BALANCE', '0'))
 
@@ -53,7 +53,7 @@ def get_municipios(file_path='data/municipios.json'):
         'id_uf': i['microrregiao']['mesorregiao']['UF']['id'],
         'uf_sigla': i['microrregiao']['mesorregiao']['UF']['sigla'],
         'uf_nome': i['microrregiao']['mesorregiao']['UF']['nome']
-    } for i in response.json()]
+    } for i in response.json() if i.get('microrregiao')]
 
 @check_if_exists
 def get_populacao_municipios(file_path='data/populacao-municipios.json'):
@@ -114,10 +114,13 @@ indicadores = [
     {'id': 47000, 'indicador': 'PIB per capita'}
 ]
 
-async def get_quiz_data_async(N=5, uf='ALL'):
+async def get_quiz_data_async(N=5, uf='ALL', load_all=False):
     df_municipios = get_municipios()
     df_populacao = get_populacao_municipios()
-    N_municipios = fetch_random_cities(df_municipios.merge(df_populacao[['id', 'populacao']], on='id'), N=N, uf=uf)
+    if load_all:
+        N_municipios = df_municipios.merge(df_populacao[['id', 'populacao']], on='id').to_dict('records')
+    else:
+        N_municipios = fetch_random_cities(df_municipios.merge(df_populacao[['id', 'populacao']], on='id'), N=N, uf=uf)
     
     def make_buffer(municipio, indicadores):
         df_buffer = get_indicadores(id=municipio['id'], indicadores=indicadores)
@@ -140,3 +143,11 @@ async def get_quiz_data_async(N=5, uf='ALL'):
 
 def get_quiz_data(*args, **kwargs):
     return asyncio.run(get_quiz_data_async(*args, **kwargs))
+
+def persist_data():
+    data = get_quiz_data(load_all=True)
+    with open('data/all.json', 'w') as f:
+        json.dump(data, f)
+
+if __name__ == '__main__':
+    persist_data()
